@@ -5,64 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospitality Process Digitalization</title>
     <style>
+        /* Basic styling for the body with gradient and animation */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            background: linear-gradient(135deg, #f06, #4a90e2);
+            color: #fff;
+            overflow: hidden;
+            animation: backgroundAnimation 10s infinite alternate;
         }
+
+        /* Keyframes for background animation */
+        @keyframes backgroundAnimation {
+            0% {
+                background: linear-gradient(135deg, #f06, #4a90e2);
+            }
+            100% {
+                background: linear-gradient(135deg, #4a90e2, #f06);
+            }
+        }
+
+        /* Container styling with animations */
         .container {
-            max-width: 600px;
-            margin: 20px auto;
+            max-width: 700px;
+            margin: 50px auto;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 12px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
             text-align: center;
+            animation: containerAnimation 1s ease-in-out;
         }
-        input[type="file"] {
-            margin: 10px 0;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            width: 100%;
+
+        /* Keyframes for container animation */
+        @keyframes containerAnimation {
+            0% {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
-        button {
-            background-color: #007bff;
-            color: white;
+
+        /* Styling for file inputs and buttons */
+        input[type="file"], button {
+            margin: 15px 0;
+            padding: 12px;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 8px;
             font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Styling for file input */
+        input[type="file"] {
+            background: #ffcb05;
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Styling for buttons */
+        button {
+            background: #34c759;
+            color: #fff;
+            border: 2px solid #34c759;
         }
         button:hover {
-            background-color: #0056b3;
+            background: #28a745;
+            border-color: #28a745;
+            transform: scale(1.05);
         }
+
+        /* Table styling */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 30px;
+            animation: tableAnimation 1s ease-in-out;
         }
+
+        /* Keyframes for table animation */
+        @keyframes tableAnimation {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Table header and cell styling */
         th, td {
-            border: 1px solid #ddd;
+            border: 2px solid #fff;
             padding: 12px;
-            text-align: left;
+            text-align: center;
         }
         th {
-            background-color: #f4f4f4;
+            background-color: #e94e77;
+            color: #fff;
+            font-size: 18px;
         }
-        @media (max-width: 600px) {
+        td {
+            background-color: #333;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
             .container {
-                padding: 10px;
-                box-shadow: none;
+                margin: 20px;
+                padding: 15px;
             }
-            th, td {
-                padding: 8px;
-            }
-            button {
-                padding: 8px 16px;
-                font-size: 14px;
+            input[type="file"], button {
+                width: 100%;
             }
         }
     </style>
@@ -76,6 +136,7 @@
         <input type="file" id="hostelFile" accept=".csv">
         <button onclick="processFiles()">Process and Allocate Rooms</button>
 
+        <!-- Results section, initially hidden -->
         <div id="results" style="display:none;">
             <h3>Room Allocation</h3>
             <table id="resultTable">
@@ -94,11 +155,17 @@
         </div>
     </div>
 
+    <!-- Include PapaParse library for CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script>
         let groupData = [];
         let hostelData = [];
 
+        /**
+         * Reads a file and parses its content as CSV.
+         * @param {HTMLInputElement} input - The file input element.
+         * @param {Function} callback - The callback function to handle parsed data.
+         */
         function readFile(input, callback) {
             const file = input.files[0];
             const reader = new FileReader();
@@ -112,6 +179,9 @@
             reader.readAsText(file);
         }
 
+        /**
+         * Processes the uploaded files and allocates rooms.
+         */
         function processFiles() {
             readFile(document.getElementById('groupFile'), function(data) {
                 groupData = data;
@@ -124,6 +194,9 @@
             });
         }
 
+        /**
+         * Allocates rooms based on group data and hostel availability.
+         */
         function allocateRooms() {
             const allocations = [];
             const boysHostels = hostelData.filter(room => room.Gender.toLowerCase() === "boys");
@@ -153,6 +226,10 @@
             displayResults(allocations);
         }
 
+        /**
+         * Displays the allocation results in the results table.
+         * @param {Array} allocations - Array of allocation objects.
+         */
         function displayResults(allocations) {
             const resultTable = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
             resultTable.innerHTML = "";
@@ -166,6 +243,9 @@
             document.getElementById('results').style.display = 'block';
         }
 
+        /**
+         * Downloads the allocation results as a CSV file.
+         */
         function downloadCSV() {
             const rows = [['Group ID', 'Hostel Name', 'Room Number', 'Members Allocated']];
             const table = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
