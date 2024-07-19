@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospitality Process Digitalization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+                box-shadow: none;
+            }
+            th, td {
+                padding: 8px;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Hospitality Process Digitalization</h2>
+        <p>Upload Group Information CSV</p>
+        <input type="file" id="groupFile" accept=".csv">
+        <p>Upload Hostel Information CSV</p>
+        <input type="file" id="hostelFile" accept=".csv">
+        <button onclick="processFiles()">Process and Allocate Rooms</button>
+
+        <div id="results" style="display:none;">
+            <h3>Room Allocation</h3>
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>Group ID</th>
+                        <th>Hostel Name</th>
+                        <th>Room Number</th>
+                        <th>Members Allocated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <button onclick="downloadCSV()">Download CSV</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        let groupData = [];
+        let hostelData = [];
+
+        function readFile(input, callback) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                callback(Papa.parse(text, { header: true }).data);
+            };
+            reader.onerror = function (e) {
+                console.error("File could not be read: " + e.target.error.name);
+            };
+            reader.readAsText(file);
+        }
+
+        function processFiles() {
+            readFile(document.getElementById('groupFile'), function(data) {
+                groupData = data;
+                console.log("Group Data Loaded: ", groupData);
+                readFile(document.getElementById('hostelFile'), function(data) {
+                    hostelData = data;
+                    console.log("Hostel Data Loaded: ", hostelData);
+                    allocateRooms();
+                });
+            });
+        }
+
+        function allocateRooms() {
+            const allocations = [];
+            const boysHostels = hostelData.filter(room => room.Gender.toLowerCase() === "boys");
+            const girlsHostels = hostelData.filter(room => room.Gender.toLowerCase() === "girls");
+
+            groupData.forEach(group => {
+                const members = parseInt(group.Members);
+                const gender = group.Gender.toLowerCase();
+                let hostels = gender === "boys" ? boysHostels : girlsHostels;
+
+                for (let i = 0; i < hostels.length; i++) {
+                    let room = hostels[i];
+                    if (members <= room.Capacity) {
+                        allocations.push({
+                            groupID: group['Group ID'],
+                            hostelName: room['Hostel Name'],
+                            roomNumber: room['Room Number'],
+                            membersAllocated: members
+                        });
+                        room.Capacity -= members;
+                        break;
+                    }
+                }
+            });
+
+            console.log("Allocations: ", allocations);
+            displayResults(allocations);
+        }
+
+        function displayResults(allocations) {
+            const resultTable = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
+            resultTable.innerHTML = "";
+            allocations.forEach(allocation => {
+                const row = resultTable.insertRow();
+                row.insertCell(0).innerText = allocation.groupID;
+                row.insertCell(1).innerText = allocation.hostelName;
+                row.insertCell(2).innerText = allocation.roomNumber;
+                row.insertCell(3).innerText = allocation.membersAllocated;
+            });
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function downloadCSV() {
+            const rows = [['Group ID', 'Hostel Name', 'Room Number', 'Members Allocated']];
+            const table = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
+            for (let i = 0, row; row = table.rows[i]; i++) {
+                const cells = [];
+                for (let j = 0, col; col = row.cells[j]; j++) {
+                    cells.push(col.innerText);
+                }
+                rows.push(cells);
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            rows.forEach(function(rowArray) {
+                const row = rowArray.join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "room_allocation.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+    </script>
+</body>
+</html>
